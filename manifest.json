@@ -2,12 +2,15 @@
   "manifest_version": 3,
   "name": "MapLead Kit - Local Business Lead Tool",
   "version": "1.0.0",
-  "description": "Collect, organize, filter, deduplicate, and export local business leads with CSV sorting options.",
+  "description": "Scrape local business leads from Google Maps search results with scrolling, filtering, and clean CSV export.",
   "permissions": [
     "storage",
     "activeTab",
-    "downloads",
-    "tabs"
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://www.google.com/maps/*",
+    "https://maps.google.com/*"
   ],
   "action": {
     "default_popup": "src/ui/popup.html"
