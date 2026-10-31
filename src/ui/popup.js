@@ -1,4 +1,4 @@
-// MapLead Kit - Popup Controller for Google Maps Scraping
+// MapLead Kit - Popup Controller for Google Maps Scraping with Clean CSV Export
 
 class PopupScraperController {
   constructor() {
@@ -32,7 +32,7 @@ class PopupScraperController {
     // Check if active tab is Google Maps
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab || !tab.url || (!tab.url.includes('google.com/maps') && !tab.url.includes('maps.google.com'))) {
-      alert('Please open Google Maps search results first (Step 1), then click Run.');
+      alert('Please open Google Maps search results first, then click Run.');
       return;
     }
 
@@ -47,14 +47,12 @@ class PopupScraperController {
     document.getElementById('progressBar').style.width = '0%';
     document.getElementById('latestLeadPreview').textContent = 'Connecting to Google Maps page...';
 
-    // Inject and start content script
     try {
       await chrome.scripting.executeScript({
         target: { tabId: tab.id },
         files: ['src/scraper/content-script.js']
       });
 
-      // Send start message
       chrome.tabs.sendMessage(tab.id, {
         action: 'start_scrape',
         limit,
@@ -95,7 +93,8 @@ class PopupScraperController {
         document.getElementById('progressBar').style.width = `${percent}%`;
 
         if (latestLead) {
-          document.getElementById('latestLeadPreview').textContent = `Latest: ${latestLead.businessName} (${latestLead.city || 'NY'})`;
+          const locStr = [latestLead.city, latestLead.region].filter(Boolean).join(', ');
+          document.getElementById('latestLeadPreview').textContent = `Latest: ${latestLead.businessName} ${locStr ? `(${locStr})` : ''}`;
         }
       } else if (message.action === 'scrape_completed') {
         this.collectedLeads = message.leads || [];
@@ -109,6 +108,17 @@ class PopupScraperController {
         this.resetUI();
       }
     });
+  }
+
+  // Helper to format clean text without newlines, line breaks or corrupted quotes
+  cleanField(val) {
+    if (val === null || val === undefined) return '';
+    let str = String(val).trim();
+    // Replace internal linebreaks and carriage returns with a single space
+    str = str.replace(/[\r\n\t]+/g, ' ');
+    // Escape double quotes as "" per RFC 4180 standard CSV
+    str = str.replace(/"/g, '""');
+    return `"${str}"`;
   }
 
   exportCSV() {
@@ -126,33 +136,44 @@ class PopupScraperController {
       leads.sort((a, b) => (a.websiteUrl ? 1 : 0) - (b.websiteUrl ? 1 : 0));
     }
 
-    const columns = [
-      'Business Name', 'Category', 'Street Address', 'City', 'Region',
-      'Postal Code', 'Country', 'Phone', 'Website URL', 'Email', 'Rating', 'Reviews', 'Source'
+    // Clean standard professional header names
+    const headers = [
+      'Business Name',
+      'Category',
+      'Street Address',
+      'City',
+      'Region',
+      'Postal Code',
+      'Country',
+      'Phone',
+      'Website',
+      'Rating',
+      'Reviews',
+      'Google Maps URL'
     ];
 
     const rows = leads.map(l => [
-      l.businessName || '',
-      l.category || '',
-      l.streetAddress || '',
-      l.city || '',
-      l.region || '',
-      l.postalCode || '',
-      l.country || 'US',
-      l.phone || '',
-      l.websiteUrl || '',
-      l.email || '',
-      l.rating || '',
-      l.reviews || '',
-      l.sourceName || 'Google Maps'
-    ].map(val => `"${String(val).replace(/"/g, '""')}"`).join(','));
+      this.cleanField(l.businessName),
+      this.cleanField(l.category),
+      this.cleanField(l.streetAddress),
+      this.cleanField(l.city),
+      this.cleanField(l.region),
+      this.cleanField(l.postalCode),
+      this.cleanField(l.country || 'US'),
+      this.cleanField(l.phone),
+      this.cleanField(l.websiteUrl),
+      this.cleanField(l.rating),
+      this.cleanField(l.reviews),
+      this.cleanField(l.sourceRecordUrl)
+    ].join(','));
 
-    const csvContent = [columns.join(','), ...rows].join('\r\n');
-    const blob = new Blob(['﻿' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    // Prepend UTF-8 BOM (﻿) so Excel & Google Sheets open with full UTF-8 support
+    const csvContent = '﻿' + [headers.map(h => `"${h}"`).join(','), ...rows].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `maplead_google_maps_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `maplead_leads_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
