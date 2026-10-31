@@ -3,59 +3,481 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Google Maps Business Scraper</title>
+  <title>MapLead Kit</title>
   <link rel="stylesheet" href="popup.css">
+  <style>
+    /* Additional styles matching the precise preview color palette (#147d65, #f5f7f5, etc.) */
+    :root {
+      --green: #147d65;
+      --mint: #e8f5ef;
+      --amber: #fbf3df;
+      --ink: #17221f;
+      --muted: #73807b;
+      --line: #e5eae7;
+      --paper: #ffffff;
+      --bg: #f5f7f5;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      width: 380px;
+      min-height: 520px;
+      margin: 0;
+      padding: 14px;
+    }
+
+    .popup-container {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 10px 30px rgba(23, 34, 31, 0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 10px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-badge {
+      width: 32px;
+      height: 32px;
+      background: var(--green);
+      color: white;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 15px;
+    }
+
+    .brand-text b {
+      font-size: 13px;
+      color: var(--ink);
+      display: block;
+    }
+
+    .brand-text small {
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    .link-btn {
+      background: none;
+      border: none;
+      color: var(--green);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .eyebrow {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .query {
+      font-size: 15px;
+      font-weight: 750;
+      color: var(--ink);
+      margin: 0 0 6px 0;
+    }
+
+    .query-line {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--green);
+      border-radius: 50%;
+    }
+
+    .notice {
+      background: var(--amber);
+      color: #665322;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 11px;
+      line-height: 1.4;
+      margin-top: 8px;
+    }
+
+    .notice strong {
+      display: block;
+      color: #544315;
+      margin-bottom: 2px;
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 750;
+      color: var(--ink);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 12px 0 6px 0;
+    }
+
+    .section-title small {
+      color: var(--muted);
+      font-weight: 500;
+      font-size: 10px;
+    }
+
+    .source-option {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      margin-bottom: 6px;
+      cursor: pointer;
+      background: #fff;
+      transition: all 0.15s ease;
+    }
+
+    .source-option.selected {
+      border-color: #8dc2ae;
+      background: #f5fbf8;
+    }
+
+    .radio-circle {
+      width: 14px;
+      height: 14px;
+      border: 1px solid #9aa8a1;
+      border-radius: 50%;
+      margin-top: 2px;
+      flex: none;
+    }
+
+    .selected .radio-circle {
+      border: 4px solid var(--green);
+    }
+
+    .source-option b {
+      font-size: 11px;
+      display: block;
+      color: var(--ink);
+    }
+
+    .source-option small {
+      font-size: 10px;
+      color: var(--muted);
+      display: block;
+      margin-top: 2px;
+    }
+
+    .badge-ready {
+      margin-left: auto;
+      font-size: 9px;
+      background: var(--mint);
+      color: var(--green);
+      border-radius: 99px;
+      padding: 2px 6px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .limit-input {
+      width: 100%;
+      height: 36px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0 10px;
+      font-size: 13px;
+      color: var(--ink);
+      outline: none;
+    }
+
+    .limit-input:focus {
+      border-color: var(--green);
+    }
+
+    .btn-primary {
+      background: var(--green);
+      color: white;
+      border: none;
+      border-radius: 9px;
+      padding: 11px;
+      width: 100%;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      margin-top: 12px;
+      transition: background 0.15s ease;
+    }
+
+    .btn-primary:hover {
+      background: #116954;
+    }
+
+    .btn-secondary {
+      background: #fff;
+      border: 1px solid var(--line);
+      color: var(--ink);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 11px;
+      font-weight: 650;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    .secure-footer {
+      border-top: 1px solid var(--line);
+      padding-top: 10px;
+      font-size: 10px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Screen 2 & 3 styles */
+    .progress-bar-wrap {
+      height: 6px;
+      background: var(--line);
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 8px 0;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--green);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .lead-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--line);
+      font-size: 11px;
+    }
+
+    .lead-row:last-child {
+      border-bottom: none;
+    }
+
+    .field-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 4px;
+      border-bottom: 1px solid var(--line);
+      font-size: 11px;
+    }
+
+    .toggle-switch {
+      width: 28px;
+      height: 16px;
+      background: #dce4df;
+      border-radius: 99px;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .toggle-switch::after {
+      content: "";
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      background: white;
+      border-radius: 50%;
+      left: 2px;
+      top: 2px;
+      transition: left 0.15s ease;
+    }
+
+    .toggle-switch.active {
+      background: var(--green);
+    }
+
+    .toggle-switch.active::after {
+      left: 14px;
+    }
+
+    .csv-preview-box {
+      background: #f7f9f7;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      font-family: ui-monospace, monospace;
+      font-size: 9px;
+      padding: 8px;
+      color: #52615a;
+      white-space: nowrap;
+      overflow-x: auto;
+      line-height: 1.5;
+    }
+  </style>
 </head>
 <body>
   <div class="popup-container">
-    <div class="header">
-      <h1>Google Maps Scraper</h1>
-    </div>
+    <!-- Top Bar -->
+    <header class="top-bar">
+      <div class="brand">
+        <div class="logo-badge">M</div>
+        <div class="brand-text">
+          <b>MapLead Kit</b>
+          <small>Local lead workspace</small>
+        </div>
+      </div>
+      <button id="openManagerBtn" class="link-btn">Lead Manager →</button>
+    </header>
 
-    <div class="actions">
-      <button id="openManagerBtn" class="btn-primary">Open Lead Manager</button>
-    </div>
-
-    <div class="divider">
-      <span>Quick Actions</span>
-    </div>
-
-    <div class="section">
-      <h3>Scrape Google Maps</h3>
-      <div class="form-group">
-        <label for="searchQuery">Search Query</label>
-        <input type="text" id="searchQuery" placeholder="e.g., glass fixer in New York" />
+    <!-- VIEW 1: Initial Maps Detection & Source Selection -->
+    <div id="viewStep1" class="view">
+      <p class="eyebrow">Current Maps search</p>
+      <h2 class="query">Glass repair in New York</h2>
+      <div class="query-line">
+        <span class="live-dot"></span>
+        <span>Search detected · 46 visible results</span>
       </div>
 
-      <div class="form-group">
-        <label for="recordLimit">Record Limit</label>
-        <input type="number" id="recordLimit" min="10" max="10000" value="100" placeholder="100" />
+      <div class="notice">
+        <strong>Maps results are context only</strong>
+        This extension does not collect or export Google Maps listing data. Choose a permitted source or import a file you're allowed to use.
       </div>
 
-      <button id="startScrapeBtn" class="btn-accent">Start Scraping</button>
+      <div class="section-title">
+        <span>Choose a data source</span>
+        <small>Step 1 of 3</small>
+      </div>
+
+      <div class="source-option selected" id="sourceCsvOpt">
+        <span class="radio-circle"></span>
+        <div>
+          <b>Import your own CSV</b>
+          <small>Use contact data you already have permission to process</small>
+        </div>
+        <span class="badge-ready">READY</span>
+      </div>
+
+      <div class="source-option" id="sourceDirOpt">
+        <span class="radio-circle"></span>
+        <div>
+          <b>Approved directory source</b>
+          <small>Connector can be added after source review</small>
+        </div>
+      </div>
+
+      <div class="section-title">
+        <span>Maximum records</span>
+        <small>Step 2 of 3</small>
+      </div>
+      <input type="number" id="recordLimitInput" class="limit-input" min="1" max="10000" value="100" />
+      <div style="font-size: 10px; color: var(--muted); margin-top: 4px;">Set a cap for the selected source · up to 10,000</div>
+
+      <button id="proceedStep1Btn" class="btn-primary">Choose source & continue →</button>
     </div>
 
-    <div class="status" id="status" style="display: none;">
-      <div class="progress-bar">
-        <div class="progress-fill" id="progressFill"></div>
+    <!-- VIEW 2: Collected Leads Review -->
+    <div id="viewStep2" class="view" style="display: none;">
+      <p class="eyebrow">Step 2 · Collected leads</p>
+      <h2 class="query" id="step2Title">Glass repair · New York</h2>
+
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="step2ProgressBar" style="width: 100%;"></div>
       </div>
-      <div class="stats">
-        <span>Collected: <span id="collectedCount">0</span></span>
-        <span>Skipped: <span id="skippedCount">0</span></span>
-        <span>Errors: <span id="errorsCount">0</span></span>
+      <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 8px;">
+        <span id="step2CountText">24 records collected</span>
+        <span style="color: var(--green); font-weight: 600;">2 duplicates skipped</span>
       </div>
-      <div class="controls">
-        <button id="pauseBtn" disabled>Pause</button>
-        <button id="resumeBtn" disabled>Resume</button>
-        <button id="stopBtn" disabled>Stop</button>
+
+      <div style="border: 1px solid var(--line); border-radius: 8px; overflow: hidden; max-height: 160px; overflow-y: auto;" id="collectedLeadsList">
+        <!-- populated dynamically -->
       </div>
+
+      <button id="proceedStep2Btn" class="btn-primary">Filter & format leads →</button>
+      <button id="backStep2Btn" class="btn-secondary" style="margin-top: 6px;">← Back</button>
     </div>
 
-    <div class="footer">
-      <p>Data stored locally in your browser</p>
+    <!-- VIEW 3: Filters & Fields -->
+    <div id="viewStep3" class="view" style="display: none;">
+      <p class="eyebrow">Step 3 · Filters & fields</p>
+      <h2 class="query">Refine contact details</h2>
+
+      <div class="field-row">
+        <span>Has website</span>
+        <div class="toggle-switch active" data-filter="website"></div>
+      </div>
+      <div class="field-row">
+        <span>Has phone number</span>
+        <div class="toggle-switch active" data-filter="phone"></div>
+      </div>
+      <div class="field-row">
+        <span>Has email</span>
+        <div class="toggle-switch" data-filter="email"></div>
+      </div>
+      <div class="field-row">
+        <span>Has social profile</span>
+        <div class="toggle-switch" data-filter="social"></div>
+      </div>
+
+      <div class="section-title" style="margin-top: 10px;">
+        <span>Sort order</span>
+      </div>
+      <select id="sortOrderSelect" class="limit-input" style="height: 34px; font-size: 11px;">
+        <option value="website-first">Website first (stable order)</option>
+        <option value="website-last">Website last</option>
+        <option value="original">Original order</option>
+      </select>
+
+      <button id="proceedStep3Btn" class="btn-primary">Preview CSV export →</button>
+      <button id="backStep3Btn" class="btn-secondary" style="margin-top: 6px;">← Back</button>
+    </div>
+
+    <!-- VIEW 4: Export CSV Preview -->
+    <div id="viewStep4" class="view" style="display: none;">
+      <p class="eyebrow">Step 4 · Export CSV</p>
+      <h2 class="query" id="exportTitleSummary">24 matching records</h2>
+
+      <div class="csv-preview-box" id="csvPreviewBox">
+        Company,Address,Phone,Website,Email<br>
+        Sample Glass Co.,Manhattan NY,212-555-0100,example.com,info@example.com<br>
+        Metro Window Works,Brooklyn NY,718-555-0140,metroworks.test,
+      </div>
+
+      <button id="downloadCsvFinalBtn" class="btn-primary">Download CSV ↓</button>
+      <button id="backStep4Btn" class="btn-secondary" style="margin-top: 6px;">← Back</button>
+    </div>
+
+    <!-- Secure Footer -->
+    <div class="secure-footer">
+      <span>✓</span>
+      <span>Local-first · No data leaves your browser</span>
     </div>
   </div>
 
+  <input type="file" id="csvFileInput" accept=".csv" style="display: none;" />
   <script src="popup.js"></script>
 </body>
 </html>

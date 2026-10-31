@@ -1,5 +1,5 @@
 {
-  "name": "google-maps-business-scraper",
+  "name": "maplead-kit",
   "version": "1.0.0",
   "description": "Chrome extension for scraping business data from Google Maps search results",
   "private": true,

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Google Maps Business Scraper",
+  "name": "MapLead Kit - Local Business Lead Tool",
   "version": "1.0.0",
-  "description": "Scrape business data from Google Maps search results and export to CSV",
+  "description": "Collect, organize, filter, deduplicate, and export local business leads with CSV sorting options.",
   "permissions": [
     "storage",
     "activeTab",
@@ -10,19 +10,9 @@
     "tabs"
   ],
   "action": {
-    "default_popup": "ui/popup.html",
-    "default_icon": {
-      "16": "ui/icons/icon-16.png",
-      "48": "ui/icons/icon-48.png",
-      "128": "ui/icons/icon-128.png"
-    }
+    "default_popup": "src/ui/popup.html"
   },
   "background": {
-    "service_worker": "ui/background.ts"
-  },
-  "icons": {
-    "16": "ui/icons/icon-16.png",
-    "48": "ui/icons/icon-48.png",
-    "128": "ui/icons/icon-128.png"
+    "service_worker": "src/ui/background.js"
   }
 }

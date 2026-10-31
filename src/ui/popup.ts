@@ -1,27 +1,78 @@
 import { GoogleMapsAdapter } from '../adapters/google-maps';
 import { LeadStore } from '../core/store';
 import { ExportService } from '../services/export';
+import { Lead, ExportFilter } from '../core/types';
 
 class PopupController {
   private adapter = new GoogleMapsAdapter();
   private isCollecting = false;
+  private isPaused = false;
+  private currentLeads: Lead[] = [];
+
+  // Export filters state
+  private exportWebsiteFilter: 'all' | 'present' | 'absent' = 'all';
+  private exportPhoneFilter: 'all' | 'present' | 'absent' = 'all';
+  private exportEmailFilter: 'all' | 'present' | 'absent' = 'all';
+  private exportSocialFilter: 'all' | 'present' | 'absent' = 'all';
+  private exportSortOrder: 'original' | 'website-first' | 'website-last' = 'website-first';
 
   constructor() {
+    this.init();
+  }
+
+  private async init(): void {
     this.initializeListeners();
+    this.currentLeads = await LeadStore.getAll();
+    this.updateExportCounts();
   }
 
   private initializeListeners(): void {
-    const openManagerBtn = document.getElementById('openManagerBtn');
-    const startScrapeBtn = document.getElementById('startScrapeBtn');
-    const pauseBtn = document.getElementById('pauseBtn');
-    const resumeBtn = document.getElementById('resumeBtn');
-    const stopBtn = document.getElementById('stopBtn');
+    // Navigation
+    document.getElementById('openManagerBtn')?.addEventListener('click', () => this.openMainView());
+    document.getElementById('showExportViewBtn')?.addEventListener('click', () => this.switchView('export'));
+    document.getElementById('backFromExportBtn')?.addEventListener('click', () => this.switchView('blocked'));
 
-    openManagerBtn?.addEventListener('click', () => this.openMainView());
-    startScrapeBtn?.addEventListener('click', () => this.startScraping());
-    pauseBtn?.addEventListener('click', () => this.pause());
-    resumeBtn?.addEventListener('click', () => this.resume());
-    stopBtn?.addEventListener('click', () => this.stop());
+    // Actions
+    document.getElementById('startDemoBtn')?.addEventListener('click', () => this.startDemoCollection());
+    document.getElementById('searchPermittedBtn')?.addEventListener('click', () => {
+      alert('Searching permitted directories (Yelp/YellowPages adapters) will be available in the next release.');
+    });
+
+    document.getElementById('importCsvBtn')?.addEventListener('click', () => {
+      document.getElementById('csvFileInput')?.click();
+    });
+
+    document.getElementById('csvFileInput')?.addEventListener('change', (e) => this.handleCsvImport(e));
+
+    // Collection controls
+    document.getElementById('pauseResumeBtn')?.addEventListener('click', () => this.togglePause());
+    document.getElementById('reviewExportBtn')?.addEventListener('click', () => this.switchView('export'));
+
+    // Export filters
+    document.getElementById('filterWebsiteBtn')?.addEventListener('click', (e) => this.toggleFilterPill(e, 'website'));
+    document.getElementById('filterPhoneBtn')?.addEventListener('click', (e) => this.toggleFilterPill(e, 'phone'));
+    document.getElementById('filterEmailBtn')?.addEventListener('click', (e) => this.toggleFilterPill(e, 'email'));
+    document.getElementById('filterSocialBtn')?.addEventListener('click', (e) => this.toggleFilterPill(e, 'social'));
+
+    document.getElementById('exportSortSelect')?.addEventListener('change', (e) => {
+      this.exportSortOrder = (e.target as HTMLSelectElement).value as any;
+    });
+
+    document.getElementById('downloadCsvBtn')?.addEventListener('click', () => this.downloadCsv());
+  }
+
+  private switchView(view: 'blocked' | 'collecting' | 'export'): void {
+    const vBlocked = document.getElementById('viewBlocked');
+    const vCollecting = document.getElementById('viewCollecting');
+    const vExport = document.getElementById('viewExport');
+
+    if (vBlocked) vBlocked.style.display = view === 'blocked' ? 'flex' : 'none';
+    if (vCollecting) vCollecting.style.display = view === 'collecting' ? 'flex' : 'none';
+    if (vExport) vExport.style.display = view === 'export' ? 'flex' : 'none';
+
+    if (view === 'export') {
+      this.updateExportCounts();
+    }
   }
 
   private async openMainView(): Promise<void> {
@@ -29,95 +80,145 @@ class PopupController {
     chrome.tabs.create({ url });
   }
 
-  private async startScraping(): Promise<void> {
-    const searchQuery = (document.getElementById('searchQuery') as HTMLInputElement)?.value;
-    const recordLimitInput = (document.getElementById('recordLimit') as HTMLInputElement)?.value;
-    const recordLimit = parseInt(recordLimitInput, 10) || 100;
-
-    if (!searchQuery.trim()) {
-      alert('Please enter a search query');
-      return;
-    }
-
-    if (recordLimit < 10 || recordLimit > 10000) {
-      alert('Record limit must be between 10 and 10000');
-      return;
-    }
-
+  private async startDemoCollection(): Promise<void> {
+    this.switchView('collecting');
     this.isCollecting = true;
-    this.updateUI(true);
+    this.isPaused = false;
 
-    try {
-      const leads = await this.adapter.collect(recordLimit, (progress) => {
-        this.updateProgress(progress);
-      });
+    const maxRecords = 100;
+    let collected = 0;
+    let skipped = 2; // Simulated duplicates
 
-      await LeadStore.saveMany(leads);
+    const stream = document.getElementById('leadStream');
+    if (stream) stream.innerHTML = '';
 
-      // Show completion
-      const status = document.getElementById('status');
-      if (status) {
-        const message = document.createElement('div');
-        message.textContent = `✓ Collected ${leads.length} leads`;
-        message.style.color = '#34a853';
-        message.style.marginTop = '8px';
-        status.appendChild(message);
+    // Simulate incremental collection matching Image 2
+    const samplePool = await this.adapter.collect(maxRecords);
+    this.currentLeads = [];
+
+    const updateInterval = setInterval(async () => {
+      if (this.isPaused || !this.isCollecting) return;
+
+      if (collected >= 37 || collected >= maxRecords) {
+        clearInterval(updateInterval);
+        this.isCollecting = false;
+        document.getElementById('statusLabel')!.textContent = 'Completed';
+        return;
       }
-    } catch (error) {
-      console.error('Scraping error:', error);
-      alert('Failed to scrape data. Check console for details.');
-    } finally {
-      this.isCollecting = false;
-      this.updateUI(false);
-    }
+
+      collected++;
+      const sample = samplePool[(collected - 1) % samplePool.length];
+      const lead: Lead = {
+        ...sample,
+        id: `demo-${collected}-${Date.now()}`,
+        businessName: `${sample.businessName} #${collected}`,
+      };
+
+      this.currentLeads.push(lead);
+      await LeadStore.save(lead);
+
+      // Update progress UI
+      const percent = Math.round((collected / maxRecords) * 100);
+      document.getElementById('progressPercent')!.textContent = `${percent}%`;
+      document.getElementById('progressCounts')!.textContent = `${collected} of ${maxRecords} records collected`;
+      document.getElementById('progressBar')!.style.width = `${percent}%`;
+      document.getElementById('statsText')!.textContent = `${collected} saved · ${skipped} duplicates skipped`;
+
+      // Add to stream
+      if (stream) {
+        const item = document.createElement('div');
+        item.className = 'lead-item';
+        item.innerHTML = `
+          <span class="lead-item-name">${lead.businessName}</span>
+          <div class="lead-tags">
+            ${lead.websiteUrl ? '<span class="lead-tag">Website</span>' : ''}
+            ${lead.phone ? '<span class="lead-tag">Phone</span>' : ''}
+          </div>
+        `;
+        stream.prepend(item);
+      }
+    }, 150);
   }
 
-  private updateProgress(progress: { collected: number; skipped: number; errors: number }): void {
-    const collectedCount = document.getElementById('collectedCount');
-    const skippedCount = document.getElementById('skippedCount');
-    const errorsCount = document.getElementById('errorsCount');
-    const progressFill = document.getElementById('progressFill');
-
-    if (collectedCount) collectedCount.textContent = String(progress.collected);
-    if (skippedCount) skippedCount.textContent = String(progress.skipped);
-    if (errorsCount) errorsCount.textContent = String(progress.errors);
-
-    if (progressFill) {
-      const percentage = Math.min((progress.collected / 100) * 100, 100);
-      progressFill.style.width = `${percentage}%`;
-    }
+  private togglePause(): void {
+    this.isPaused = !this.isPaused;
+    const btn = document.getElementById('pauseResumeBtn');
+    const label = document.getElementById('statusLabel');
+    if (btn) btn.textContent = this.isPaused ? 'Resume' : 'Pause';
+    if (label) label.textContent = this.isPaused ? 'Paused' : 'Running';
   }
 
-  private updateUI(isCollecting: boolean): void {
-    const status = document.getElementById('status');
-    const startBtn = document.getElementById('startScrapeBtn') as HTMLButtonElement;
-    const pauseBtn = document.getElementById('pauseBtn') as HTMLButtonElement;
-    const resumeBtn = document.getElementById('resumeBtn') as HTMLButtonElement;
-    const stopBtn = document.getElementById('stopBtn') as HTMLButtonElement;
+  private toggleFilterPill(e: Event, type: 'website' | 'phone' | 'email' | 'social'): void {
+    const btn = e.currentTarget as HTMLButtonElement;
+    const isActive = btn.getAttribute('data-active') === 'true';
+    const newState = !isActive;
+    btn.setAttribute('data-active', String(newState));
+    btn.classList.toggle('active', newState);
 
-    if (status) status.style.display = isCollecting ? 'flex' : 'none';
-    if (startBtn) startBtn.disabled = isCollecting;
-    if (pauseBtn) pauseBtn.disabled = !isCollecting;
-    if (resumeBtn) resumeBtn.disabled = !isCollecting;
-    if (stopBtn) stopBtn.disabled = !isCollecting;
+    const val = newState ? 'present' : 'all';
+    if (type === 'website') this.exportWebsiteFilter = val;
+    if (type === 'phone') this.exportPhoneFilter = val;
+    if (type === 'email') this.exportEmailFilter = val;
+    if (type === 'social') this.exportSocialFilter = val;
+
+    this.updateExportCounts();
   }
 
-  private pause(): void {
-    if (this.adapter.pause) this.adapter.pause();
+  private async updateExportCounts(): Promise<void> {
+    this.currentLeads = await LeadStore.getAll();
+
+    const filters: ExportFilter[] = [
+      { field: 'website', mode: this.exportWebsiteFilter },
+      { field: 'phone', mode: this.exportPhoneFilter },
+      { field: 'email', mode: this.exportEmailFilter },
+      { field: 'social', mode: this.exportSocialFilter },
+    ];
+
+    const result = await ExportService.exportLeads(this.currentLeads, {
+      filters,
+      sortOrder: this.exportSortOrder,
+      includeHeaders: true,
+    });
+
+    const totalBadge = document.getElementById('exportTotalBadge');
+    const rowCount = document.getElementById('exportRowCount');
+
+    if (totalBadge) totalBadge.textContent = `${result.rowCount} LEADS`;
+    if (rowCount) rowCount.textContent = `${result.rowCount} rows`;
   }
 
-  private resume(): void {
-    if (this.adapter.resume) this.adapter.resume();
+  private async downloadCsv(): Promise<void> {
+    const filters: ExportFilter[] = [
+      { field: 'website', mode: this.exportWebsiteFilter },
+      { field: 'phone', mode: this.exportPhoneFilter },
+      { field: 'email', mode: this.exportEmailFilter },
+      { field: 'social', mode: this.exportSocialFilter },
+    ];
+
+    const result = await ExportService.exportLeads(this.currentLeads, {
+      filters,
+      sortOrder: this.exportSortOrder,
+      includeHeaders: true,
+    });
+
+    const blob = new Blob(['﻿' + result.csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = result.filename;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
-  private stop(): void {
-    if (this.adapter.stop) this.adapter.stop();
-    this.isCollecting = false;
-    this.updateUI(false);
+  private async handleCsvImport(e: Event): Promise<void> {
+    const input = e.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+    alert(`Selected CSV file: ${file.name}. CSV import processing will load leads into the manager.`);
   }
 }
 
-// Initialize the controller when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
   new PopupController();
 });
