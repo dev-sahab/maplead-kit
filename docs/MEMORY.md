@@ -1,0 +1,5 @@
+- [PRD](PRD.md) — Product requirements and user needs
+- [RULES](RULES.md) — Data source policy and development guidelines
+- [ARCHITECTURE](ARCHITECTURE.md) — Technical architecture and module design
+- [PHASES_TASKS](PHASES_TASKS.md) — Implementation phases and task tracking
+- [DESIGN](DESIGN.md) — UI layouts, component states, and user flow

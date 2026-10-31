@@ -1,0 +1,46 @@
+{
+  "name": "google-maps-business-scraper",
+  "version": "1.0.0",
+  "description": "Chrome extension for scraping business data from Google Maps search results",
+  "private": true,
+  "scripts": {
+    "build": "esbuild src/ui/popup.ts src/ui/background.ts src/adapters/google-maps.ts src/services/export.ts src/services/import.ts --bundle --platform=browser --outdir=dist --external:chrome",
+    "dev": "npm run build -- --watch",
+    "test": "jest",
+    "lint": "eslint src --ext .ts",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "esbuild": "^0.19.0",
+    "eslint": "^8.40.0",
+    "jest": "^29.5.0",
+    "prettier": "^3.0.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.0.0"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "testMatch": ["**/__tests__/**/*.ts", "**/?(*.)+(spec|test).ts"],
+    "collectCoverageFrom": ["src/**/*.ts", "!src/**/*.d.ts"]
+  },
+  "prettier": {
+    "semi": true,
+    "trailingComma": "es5",
+    "singleQuote": true,
+    "printWidth": 100,
+    "tabWidth": 2
+  },
+  "eslintConfig": {
+    "parser": "@typescript-eslint/parser",
+    "extends": ["plugin:@typescript-eslint/recommended"],
+    "rules": {
+      "@typescript-eslint/no-explicit-any": "warn"
+    }
+  }
+}

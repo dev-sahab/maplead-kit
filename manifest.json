@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "Google Maps Business Scraper",
+  "version": "1.0.0",
+  "description": "Scrape business data from Google Maps search results and export to CSV",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "downloads",
+    "tabs"
+  ],
+  "action": {
+    "default_popup": "ui/popup.html",
+    "default_icon": {
+      "16": "ui/icons/icon-16.png",
+      "48": "ui/icons/icon-48.png",
+      "128": "ui/icons/icon-128.png"
+    }
+  },
+  "background": {
+    "service_worker": "ui/background.ts"
+  },
+  "icons": {
+    "16": "ui/icons/icon-16.png",
+    "48": "ui/icons/icon-48.png",
+    "128": "ui/icons/icon-128.png"
+  }
+}

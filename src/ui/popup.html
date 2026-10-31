@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Google Maps Business Scraper</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <div class="header">
+      <h1>Google Maps Scraper</h1>
+    </div>
+
+    <div class="actions">
+      <button id="openManagerBtn" class="btn-primary">Open Lead Manager</button>
+    </div>
+
+    <div class="divider">
+      <span>Quick Actions</span>
+    </div>
+
+    <div class="section">
+      <h3>Scrape Google Maps</h3>
+      <div class="form-group">
+        <label for="searchQuery">Search Query</label>
+        <input type="text" id="searchQuery" placeholder="e.g., glass fixer in New York" />
+      </div>
+
+      <div class="form-group">
+        <label for="recordLimit">Record Limit</label>
+        <input type="number" id="recordLimit" min="10" max="10000" value="100" placeholder="100" />
+      </div>
+
+      <button id="startScrapeBtn" class="btn-accent">Start Scraping</button>
+    </div>
+
+    <div class="status" id="status" style="display: none;">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="stats">
+        <span>Collected: <span id="collectedCount">0</span></span>
+        <span>Skipped: <span id="skippedCount">0</span></span>
+        <span>Errors: <span id="errorsCount">0</span></span>
+      </div>
+      <div class="controls">
+        <button id="pauseBtn" disabled>Pause</button>
+        <button id="resumeBtn" disabled>Resume</button>
+        <button id="stopBtn" disabled>Stop</button>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>Data stored locally in your browser</p>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
