@@ -98,29 +98,60 @@
 
     if (!fullAddress) return res;
 
-    // Pattern: "... City, STATE 12345" or "... City, STATE"
-    const zipMatch = fullAddress.match(/,\s*([A-Za-z\s]+),\s*([A-Z]{2})\s*(\d{5}(-\d{4})?)?/);
+    // Clean up extra characters first
+    let addr = fullAddress.trim();
+
+    // Pattern 1: "... City, STATE 12345" or "... City, STATE" (US format)
+    // Example: "123 Main St, New York, NY 10001" or "123 Main St, NY 10001"
+    const usPattern = /,\s*([A-Za-z\s]+?),\s*([A-Z]{2})\s*(\d{5}(-\d{4})?)?/i;
+    let zipMatch = addr.match(usPattern);
     if (zipMatch) {
       res.city = (zipMatch[1] || '').trim();
       res.region = (zipMatch[2] || '').trim();
       res.postalCode = (zipMatch[3] || '').trim();
-      const idx = fullAddress.indexOf(zipMatch[0]);
+      const idx = addr.indexOf(zipMatch[0]);
       if (idx > 0) {
-        res.street = fullAddress.substring(0, idx).trim();
+        res.street = addr.substring(0, idx).trim();
       }
       return res;
     }
 
-    const parts = fullAddress.split(',').map(p => p.trim()).filter(Boolean);
-    if (parts.length >= 3) {
-      res.street = parts[0];
-      res.city = parts[1];
-      const stateZip = parts[2].trim().split(/\s+/);
-      if (stateZip.length >= 1) res.region = stateZip[0];
-      if (stateZip.length >= 2) res.postalCode = stateZip[1];
-    } else if (parts.length === 2) {
-      res.street = parts[0];
-      res.city = parts[1];
+    // Pattern 2: "Street Address, City, State Zip" - full format
+    // Example: "123 Main St, New York, NY 10001"
+    const fullPattern = /(.+),\s*([^,]+?),\s*([A-Z]{2})\s*(\d{5})/i;
+    zipMatch = addr.match(fullPattern);
+    if (zipMatch) {
+      res.street = (zipMatch[1] || '').trim();
+      res.city = (zipMatch[2] || '').trim();
+      res.region = (zipMatch[3] || '').trim();
+      res.postalCode = (zipMatch[4] || '').trim();
+      return res;
+    }
+
+    // Pattern 3: "Street, City" (no state/zip available)
+    const twoPart = addr.split(',').map(p => p.trim()).filter(Boolean);
+    if (twoPart.length >= 2) {
+      res.street = twoPart[0];
+      res.city = twoPart[1];
+      // Try to extract state/zip from later parts if available
+      if (twoPart.length >= 3) {
+        const stateZip = twoPart[2].split(/\s+/);
+        if (stateZip[0] && /^[A-Z]{2}$/.test(stateZip[0])) {
+          res.region = stateZip[0];
+        }
+        if (stateZip[1] && /^\d{5}$/.test(stateZip[1])) {
+          res.postalCode = stateZip[1];
+        }
+      }
+      return res;
+    }
+
+    // Pattern 4: No commas - might be international or malformed
+    // Try to find standalone state and zip
+    const zipOnly = addr.match(/(\d{5}(-\d{4})?)/);
+    if (zipOnly) {
+      res.postalCode = zipOnly[1];
+      res.street = addr.replace(zipOnly[0], '').trim();
     }
 
     return res;
@@ -141,7 +172,8 @@
       const reviewsEl = card.querySelector('span.UY7F9');
       const reviews = reviewsEl ? reviewsEl.innerText.replace(/[()]/g, '').trim() : '';
 
-      const textContainers = card.querySelectorAll('div.W4Efsd');
+      // Try multiple selectors to capture address and other fields
+      const textContainers = card.querySelectorAll('div.W4Efsd, div.RRDA7f, div.T6Hl7, div.gm2-body-all');
       let category = '';
       let rawAddress = '';
       let phone = '';
@@ -179,14 +211,22 @@
             return;
           }
 
-          // Capture address if not set
-          if (!rawAddress && (/\d+/.test(part) || /,/.test(part) || /street|st|ave|blvd|rd|dr|way|broadway|lane|floor/i.test(part))) {
-            rawAddress = part;
-          } else if (!rawAddress && part.length > 3) {
+          // Capture address if not set - look for street-like patterns
+          if (!rawAddress && (/\d+/.test(part) || /,/.test(part) || /street|st\.?|ave\.?|blvd|rd\.?|dr\.?|way|broadway|lane|floor/i.test(part))) {
             rawAddress = part;
           }
         });
       });
+
+      // If rawAddress not found from W4Efsd, try to find it in the card's textContent
+      if (!rawAddress) {
+        const allText = card.innerText;
+        // Look for patterns like "123 Main St, City, State" or "Street, City"
+        const addrMatch = allText.match(/(.+?(?:Street|St\.?|Avenue|Ave\.?|Boulevard|Blvd\.?|Road|Rd\.?|Drive|Dr\.?|Way|Lane|Ln\.?|Court|Ct\.?|Place|Pl\.?|Boulevard|Blvd\.?))[^A-Za-z]*([A-Za-z][A-Za-z\s]+,?\s+[A-Z]{2}\s*\d{5})?/i);
+        if (addrMatch && addrMatch[1]) {
+          rawAddress = addrMatch[1].trim();
+        }
+      }
 
       const cleanAddr = cleanAddress(rawAddress);
       const loc = parseLocationParts(cleanAddr);
@@ -282,7 +322,7 @@
 
       const currentHeight = scrollContainer.scrollHeight;
       scrollContainer.scrollTop = currentHeight;
-      await sleep(1200);
+      await sleep(1600); // Increased from 1200ms to 1600ms
 
       const endNotice = document.querySelector('span.HlvSq, div.fontTitleSmall');
       if (endNotice && endNotice.innerText.includes("You've reached the end of the list")) {
@@ -291,11 +331,23 @@
 
       if (scrollContainer.scrollHeight === previousHeight) {
         sameHeightCount++;
-        if (sameHeightCount >= 4) {
+        if (sameHeightCount >= 6) { // Increased from 4 to 6 attempts
+          // Try alternative scrolling
           scrollContainer.scrollBy(0, 1000);
-          await sleep(1500);
+          await sleep(1800); // Increased from 1500ms
+          // Try another scroll method
+          scrollContainer.scrollBy({ top: 500, behavior: 'smooth' });
+          await sleep(2000); // Give more time for lazy loading
           if (scrollContainer.scrollHeight === previousHeight) {
-            break;
+            // Final check - try clicking "More results" or similar
+            const moreBtn = document.querySelector('button[aria-label*="More results"], button[aria-label*="Show more"]');
+            if (moreBtn) {
+              moreBtn.click();
+              await sleep(2500);
+            }
+            if (scrollContainer.scrollHeight === previousHeight) {
+              break;
+            }
           }
         }
       } else {

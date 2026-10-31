@@ -15,6 +15,11 @@
   "action": {
     "default_popup": "src/ui/popup.html"
   },
+  "icons": {
+    "16": "src/ui/icons/icon-16.png",
+    "48": "src/ui/icons/icon-48.png",
+    "128": "src/ui/icons/icon-128.png"
+  },
   "background": {
     "service_worker": "src/ui/background.js"
   }

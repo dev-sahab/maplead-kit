@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <!-- Background with primary blue -->
+  <rect width="128" height="128" fill="#2563eb" rx="24"/>
+
+  <!-- Simple map pin -->
+  <path d="M64 25 C48 25 36 37 36 53 C36 73 64 103 64 103 C64 103 92 73 92 53 C92 37 80 25 64 25 Z"
+        fill="#ffffff"/>
+
+  <!-- Center dot -->
+  <circle cx="64" cy="53" r="12" fill="#2563eb"/>
+</svg>

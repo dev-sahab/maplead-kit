@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <!-- Background -->
+  <rect width="128" height="128" fill="#2563eb" rx="24"/>
+
+  <!-- Map Pin Shape -->
+  <g transform="translate(64, 50)">
+    <!-- Pin body -->
+    <path d="M 0 -20 C -11 -20 -20 -11 -20 0 C -20 15 0 35 0 35 C 0 35 20 15 20 0 C 20 -11 11 -20 0 -20 Z" fill="#ffffff"/>
+
+    <!-- Pin dot -->
+    <circle cx="0" cy="0" r="6" fill="#2563eb"/>
+  </g>
+
+  <!-- Document/List overlay -->
+  <g transform="translate(64, 75)">
+    <rect x="-12" y="-8" width="24" height="16" fill="none" stroke="#ffffff" stroke-width="1.5" rx="2"/>
+    <line x1="-8" y1="-4" x2="8" y2="-4" stroke="#ffffff" stroke-width="1"/>
+    <line x1="-8" y1="0" x2="8" y2="0" stroke="#ffffff" stroke-width="1"/>
+    <line x1="-8" y1="4" x2="8" y2="4" stroke="#ffffff" stroke-width="1"/>
+  </g>
+</svg>
