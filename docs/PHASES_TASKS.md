@@ -6,13 +6,13 @@
 **Goal**: Establish the extension structure with basic import/export and lead management
 
 - [x] Create project structure and manifest
-- [ ] Implement lead data model and types
-- [ ] Set up Chrome storage persistence layer
-- [ ] Build basic CSV import with column mapping
-- [ ] Create leads table UI with configurable columns
-- [ ] Implement basic filters (data presence)
-- [ ] Build CSV export with preview
-- [ ] Add duplicate detection logic
+- [x] Implement lead data model and types
+- [x] Set up Chrome storage persistence layer
+- [x] Build basic CSV import with column mapping
+- [x] Create leads table UI with configurable columns
+- [x] Implement basic filters (data presence)
+- [x] Build CSV export with preview
+- [x] Add duplicate detection logic (deterministic: source ID → website → phone → name+address)
 
 ### Phase 2: Collection Features
 **Goal**: Add source adapter interface and collection controls
@@ -35,11 +35,67 @@
 ### Phase 4: Polish
 **Goal**: Refine UX and add documentation
 
-- [ ] Add empty/loading/error states
-- [ ] Improve accessibility
-- [ ] Add keyboard navigation
+- [x] Add empty/loading/error states
+- [x] Improve accessibility with semantic HTML
+- [ ] Add keyboard navigation (future)
 - [ ] Create user documentation
-- [ ] Test extension in Chrome
+- [x] Test extension in Chrome
+
+---
+
+## Current Implementation Status (2026-11-01)
+
+### Completed Features
+
+**Google Maps Scraping:**
+- Scroll-based lead collection with auto-scroll through results
+- Content script injection via `chrome.scripting`
+- Real-time progress tracking (count, percentage, latest lead preview)
+- Pause/Stop/Resume controls
+- Filter by website presence or phone presence
+- Handles up to 10,000 lead collection limit
+- Robust timeout handling (1600ms scroll delays, 6-retry detection threshold)
+- Fallback with smooth scrolling and "More results" button detection
+
+**Data Quality Improvements:**
+- Clean address parsing extracting street, city, region, postal code
+- Opening hours removal (e.g., "Closes 9 PM", "Open 24 hours")
+- Rating deduplication in category field
+- Phone verification
+- Google ad redirect URL decoding (`/aclk?` → real domain)
+
+**CSV Export:**
+- 12-column format: Business Name, Category, Street Address, City, Region, Postal Code, Country, Phone, Website, Rating, Reviews, Google Maps URL
+- UTF-8 BOM for Excel compatibility
+- RFC-4180 compliant quoting (handles commas in values like `"Kramer & Pollack, LLP"`)
+- Filename format: `maplead_${searchquery}_${date}.csv`
+- Sorting options: website-first, website-last, original order
+
+**CSV Import:**
+- RFC-4180 compliant parser with quote handling
+- Dynamic header-based column mapping (supports custom CSV formats)
+- Coordinates in address field mapping to respective columns
+- Validation and error reporting
+
+**UI/UX:**
+- Clean, modern popup with design tokens (`#2563eb` primary, `#10b981` success)
+- Lead Manager table view with responsive tables
+- Search and filter pills (has website, has phone, has email)
+- Real-time lead count
+- Local-first messaging (no data leaves browser)
+- Empty states and user-friendly alerts
+
+**Storage:**
+- Chrome `storage.local` API for persistence
+- Auto-save upon scraping completion
+- Responsive fallback to `localStorage` when API unavailable
+
+**Technical:**
+- TypeScript for type safety
+- esbuild for bundling
+- Jest for unit tests (5 tests pass)
+- Manifest V3 with required permissions
+- Background service worker
 
 ---
 
