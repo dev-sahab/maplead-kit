@@ -45,9 +45,13 @@
 
 ### Current Permissions Needed
 - `storage`: For persisting lead data locally
-- `activeTab`: For reading Google Maps page content
-- `downloads`: For CSV export functionality
-- `tabs`: For opening Google Maps search URLs
+- `activeTab`: For accessing the active tab
+- `scripting`: For injecting content scripts into Google Maps pages
+- `host_permissions`: For google.com/maps access
+
+### Export Implementation
+- CSV export uses browser Blob and anchor tag download (no downloads API required)
+- UTF-8 BOM ensures Excel/Sheets compatibility
 
 ## User-Facing Rules
 

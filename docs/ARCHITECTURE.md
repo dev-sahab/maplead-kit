@@ -5,10 +5,11 @@ Google Maps Business Scraper is a Chrome extension with a modular architecture. 
 
 ## Tech Stack
 - **Manifest V3**: Chrome extension manifest version
-- **TypeScript**: Type safety and better code organization
+- **TypeScript**: Type safety (compiled to JavaScript)
 - **Vanilla JavaScript**: No heavy framework dependencies
 - **Chrome Storage API**: Local data persistence
-- **Chrome Downloads API**: CSV export functionality
+- **Blob/Download API**: CSV export via browser Blob downloads
+- **Chrome Scripting API**: Content script injection for scraping
 
 ## Architecture Layers
 
